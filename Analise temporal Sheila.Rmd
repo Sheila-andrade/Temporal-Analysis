@@ -1,0 +1,1992 @@
+---
+title: "Analise temporal"
+author: "Sheila Andrade"
+date: "18 de novembro de 2019"
+output: html_document
+---
+
+# Exercício Análise Temporal 
+
+# Parte 1 - ajuste por regressão linear
+
+Carregamento dos pacotes utilizados durante a realização dos exercícios.
+```{r}
+library(readxl)
+library(tidyverse)
+library(cowplot)
+library(knitr)
+library(minpack.lm)
+library(plyr)
+library(epiR)
+library(BiasedUrn)
+library (nlme)
+library (agricolae)
+```
+
+
+Com base nos dados disponibilizados para cada grupo, que consistem em avaliações de intensidade de doença o tempo, execute os seguintes passos para analisar os dados: 
+carregamento dos dados:
+```{r}
+dat1<- read_excel("Dados (2).xlsx")
+dat1
+```
+
+
+  
+# Questão 1
+  
+Considerando o valor médio de severidade (y) nas repetições, represente graficamente o progresso da doença de duas diferentes formas: a severidade média da doença no tempo e a taxa absoluta no tempo. Faça um gráfico de dispersão de pontos conectados por linhas. 
+
+Cálculo do valor médio da severidade x tempo
+```{r}
+dat2<-dat1 %>% 
+  group_by(cultivar,t) %>%
+  dplyr:: summarise(s=mean(y)) 
+dat2
+  dat2 %>% 
+  ggplot(aes(t,s, color=cultivar)) + geom_point() + 
+  geom_line()+ labs(x = "Tempo (dias)", y = "Valor Médio da Severidade")+theme_minimal()
+ dat2 
+```
+
+Cálculo da taxa abosoluta (dy/dt) x tempo
+```{r fig.height=3, fig.width=9}
+t = c(0, 7, 14, 21, 28, 42, 63, 112)
+incMg= c (0.90, 4.29, 5.59, 7.59, 8.66, 12.23, 26.87, 70.56)
+incA= c (3.81, 13.62, 21.43, 40.92, 70.31, 81.20, 93.23, 94.66)
+incMA= c (4.78, 11.25, 12.43, 14.78, 19.35, 22.96, 28.08, 94.30)
+
+y1=incMg/100
+y2=incA/100
+y3=incMA/100
+curva1 <- data.frame(t, y1)
+curva2 <- data.frame(t, y2)
+curva3 <- data.frame(t, y3)
+
+dydt1= c(0,
+curva1[2,2]-curva1[1,2],
+curva1[3,2]-curva1[2,2],
+curva1[4,2]-curva1[3,2],
+curva1[5,2]-curva1[4,2],
+curva1[6,2]-curva1[5,2],
+curva1[7,2]-curva1[6,2],
+curva1[8,2]-curva1[7,2])
+dydt1
+
+dydt2=c(0,
+curva2[2,2]-curva2[1,2],
+curva2[3,2]-curva2[2,2],
+curva2[4,2]-curva2[3,2],
+curva2[5,2]-curva2[4,2],
+curva2[6,2]-curva2[5,2],
+curva2[7,2]-curva2[6,2],
+curva2[8,2]-curva2[7,2])
+dydt2
+
+dydt3=c(0,
+curva3[2,2]-curva3[1,2],
+curva3[3,2]-curva3[2,2],
+curva3[4,2]-curva3[3,2],
+curva3[5,2]-curva3[4,2],
+curva3[6,2]-curva3[5,2],
+curva3[7,2]-curva3[6,2],
+curva3[8,2]-curva3[7,2])
+dydt3
+
+t2=c(0,
+(curva1[2,1]+curva1[1,1])/2,
+(curva1[3,1]+curva1[2,1])/2,
+(curva1[4,1]+curva1[3,1])/2,
+(curva1[5,1]+curva1[4,1])/2,
+(curva1[6,1]+curva1[5,1])/2,
+(curva1[7,1]+curva1[6,1])/2,
+(curva1[8,1]+curva1[7,1])/2)
+t2
+
+y1=c(0,
+(curva1[2,2]+curva1[1,2])/2,
+(curva1[3,2]+curva1[2,2])/2,
+(curva1[4,2]+curva1[3,2])/2,
+(curva1[5,2]+curva1[4,2])/2,
+(curva1[6,2]+curva1[5,2])/2,
+(curva1[7,2]+curva1[6,2])/2,
+(curva1[8,2]+curva1[7,2])/2)
+y1
+
+y2=c(0,
+(curva2[2,2]+curva2[1,2])/2,
+(curva2[3,2]+curva2[2,2])/2,
+(curva2[4,2]+curva2[3,2])/2,
+(curva2[5,2]+curva2[4,2])/2,
+(curva2[6,2]+curva2[5,2])/2,
+(curva2[7,2]+curva2[6,2])/2,
+(curva2[8,2]+curva2[7,2])/2)
+y2
+
+y3=c(0,
+(curva3[2,2]+curva3[1,2])/2,
+(curva3[3,2]+curva3[2,2])/2,
+(curva3[4,2]+curva3[3,2])/2,
+(curva3[5,2]+curva3[4,2])/2,
+(curva3[6,2]+curva3[5,2])/2,
+(curva3[7,2]+curva3[6,2])/2,
+(curva3[8,2]+curva3[7,2])/2)
+y3
+
+
+
+#Tempo e taxa absoluta Magaly
+dydtMag <- data.frame(dydt1, t2)
+Magaly<-ggplot(dydtMag, aes(t2, dydt1))+
+                geom_point(color="blue")+
+                geom_line(stat = "identity",color="blue")+
+                ggtitle("Tempo (dias) x Taxa absoluta (Magaly)")+
+                labs(x = "Tempo (dias)", y = "Taxa absoluta (dy/dt)")+
+                theme_minimal(base_size = 8)
+
+
+#Tempo e taxa absoluta Amanda
+dydtAman<- data.frame(dydt2, t2) 
+Amanda<-ggplot(dydtAman, aes(t2, dydt2))+
+                geom_point()+
+                geom_point(color="blue")+
+                geom_line(stat = "identity",color="blue")+
+                ggtitle("Tempo (dias) x Taxa absoluta (Amanda)")+
+                labs(x = "Tempo (dias)", y = "Taxa absoluta (dy/dt)")+
+                theme_minimal(base_size = 8)
+
+#Tempo e taxa absoluta Margarita
+dydtMa<- data.frame(dydt3, t2) 
+Margarita<-ggplot(dydtMa, aes(t2, dydt3))+
+                geom_point()+
+                geom_point(color="blue")+
+                geom_line(stat = "identity",color="blue")+
+                ggtitle("Tempo (y) x Taxa absoluta (Margarita)")+
+                labs(x = "Tempo (dias)", y = "Taxa absoluta (dy/dt)")+
+                theme_minimal(base_size = 8)
+
+
+
+cowplot::plot_grid(Magaly, Amanda, Margarita, ncol = 3)
+```
+
+
+
+# Questão 2
+
+Ainda para os valores médios de y, calcule e apresente os valores de y e os valores de y linearizados para 4 modelos ( y*E, y*M, y*L e y*G), para cada tempo t em cada uma das três epidemias. Em seguida, apresente os gráficos de cada um dos 4 valores de y*, para cada modelo, no tempo (ex. y*M versus t, etc.).
+
+###MAGALY
+```{r}
+#Cálculo para Magaly
+curva1<-mutate(curva1, yexp = log(y1))             #exponito
+curva1<-mutate(curva1,ymon = log(1/(1-y1)))        #monito
+curva1<-mutate(curva1,ylog = log(y1/(1-y1)))       #logito
+curva1<-mutate(curva1,ygom = -log(-log(y1)))      #gompito
+
+## Tabela Magaly
+kable( curva1 ,format="pandoc", caption = "Diferentes modelos Magaly"
+       , align = c('l', 'c', 'r', 'r', 'c', 'l')
+       , col.names = c("t","y","yexp","ymon","ylog","ygom")
+       , row.names = TRUE
+       , digits = 3
+       , format.args = list( decimal.mark = ","))
+
+
+```
+
+
+```{r}
+
+#Gráfico Magaly y* para cada modelo x tempo
+
+M1<-ggplot(curva1, aes(t, yexp))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="blue")+
+  geom_line(stat ="identity",color="blue")+ggtitle("Exponencial")+xlab("tempo(dias)")+ylab("exponito")+
+   theme_minimal(base_size = 12)
+
+M2<-ggplot(curva1, aes(t, ymon))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="blue")+
+  geom_line(stat ="identity",color="blue")+ggtitle("Monomolecular")+xlab("tempo(dias)")+ylab("monito")+
+   theme_minimal(base_size = 12)
+
+M3<-ggplot(curva1, aes(t, ylog))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="blue")+
+  geom_line(stat ="identity",color="blue")+ggtitle("Logístico")+xlab("tempo(dias)")+ylab("logito")+
+   theme_minimal(base_size = 12)
+
+M4<-ggplot(curva1, aes(t, ygom))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="blue")+
+  geom_line(stat ="identity",color="blue")+ggtitle("Gompertz")+xlab("tempo(dias)")+ylab("gompito")+
+   theme_minimal(base_size = 12)
+
+plot_grid(M1,M2,M3,M4)
+
+
+```
+
+
+###Amanda
+```{r}
+#Cálculo para Amanda
+curva2<-mutate(curva2, yexp = log(y2))               #exponito
+curva2<-mutate(curva2,ymon = log(1/(1-y2)))          #monito
+curva2<-mutate(curva2,ylog = log(y2/(1-y2)))          # logito
+curva2<-mutate(curva2,ygom = -log(-log(y2)))         # gompito
+# Tabela Amanda
+kable( curva2 ,format="pandoc", caption = "Diferentes modelos Amanda"
+       , align = c('l', 'c', 'r', 'r', 'c', 'l')
+       , col.names = c("t","y","yexp","ymon","ylog","ygom")
+       , row.names = TRUE
+       , digits = 3
+       , format.args = list( decimal.mark = ","))
+
+```
+
+```{r}
+#  Gráfico Amanda y* para cada modelo x tempo
+A1<-ggplot(curva2, aes(t, yexp))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="orange")+
+  geom_line(stat ="identity",color="orange")+ggtitle("Exponencial")+xlab("tempo(dias)")+ylab("exponito")+
+   theme_minimal(base_size = 12)
+
+A2<-ggplot(curva2, aes(t, ymon))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="orange")+
+  geom_line(stat ="identity",color="orange")+ggtitle("Monomolecular")+xlab("tempo(dias)")+ylab("monito")+
+   theme_minimal(base_size = 12)
+
+A3<-ggplot(curva2, aes(t, ylog))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="orange")+
+  geom_line(stat ="identity",color="orange")+ggtitle("Logístico")+xlab("tempo(dias)")+ylab("logito")+
+   theme_minimal(base_size = 12)
+
+A4<-ggplot(curva2, aes(t, ygom))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="orange")+
+  geom_line(stat ="identity",color="orange")+ggtitle("Gompertz")+xlab("tempo(dias)")+ylab("gompito")+
+   theme_minimal(base_size = 12)
+
+plot_grid(A1,A2,A3,A4)
+
+```
+
+###Margarita
+```{r}
+# Cálulo Margarita
+curva3<-mutate(curva3,yexp = log(y3))               #exponito
+curva3<-mutate(curva3,ymon = log(1/(1-y3)))         #monito
+curva3<-mutate(curva3,ylog = log(y3/(1-y3)))        #logito
+curva3<-mutate(curva3,ygom = -log(-log(y3)))        #gompito
+
+
+#Tabela Margarita
+kable(curva3 ,format="pandoc", caption = "Diferentes modelos Margarita"
+       , align = c('l', 'c', 'r', 'r', 'c', 'l')
+       , col.names = c("t","y","yexp","ymon","ylog","ygom")
+       , row.names = TRUE
+       , digits = 3
+       , format.args = list( decimal.mark = ","))
+    
+```
+
+
+
+```{r}
+#  Gráfico Margarita y* para cada modelo x tempo
+MA1<-ggplot(curva3, aes(t, yexp))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="gray")+
+  geom_line(stat ="identity",color="gray")+ggtitle("Exponencial")+xlab("tempo(dias)")+ylab("exponito")+
+   theme_minimal(base_size = 12)
+
+MA2<-ggplot(curva3, aes(t, ymon))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="gray")+
+  geom_line(stat ="identity",color="gray")+ggtitle("Monomolecular")+xlab("tempo(dias)")+ylab("monito")+
+   theme_minimal(base_size = 12)
+
+MA3<-ggplot(curva3, aes(t, ylog))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="gray")+
+  geom_line(stat ="identity",color="gray")+ggtitle("Logístico")+xlab("tempo(dias)")+ylab("logito")+
+   theme_minimal(base_size = 12)
+
+MA4<-ggplot(curva3, aes(t, ygom))+
+  geom_point(position = position_dodge(width = 0.90),size=2,color="gray")+
+  geom_line(stat ="identity",color="gray")+ggtitle("Gompertz")+xlab("tempo(dias)")+ylab("gompito")+
+   theme_minimal(base_size = 12)
+
+plot_grid(MA1,MA2,MA3,MA4)
+
+```
+
+Junção dos gráficos de cada modelo para cada cultivar, diferenciados por cor.
+```{r fig.height=6, fig.width=10}
+plot_grid(M1,M2,M3,M4,A1,A2,A3,A4,MA1,MA2,MA3,MA4)
+```
+
+
+
+# Questão 3
+Com base na análise gráfica (questões 1 e 2) discuta qual(ais) modelo(s) possivelmente se ajusta(m) aos dados observados de progresso da doença e os motivos para a decisão. 
+
+Observando a curva de progresso da doença para cada para Magaly e Margarita o melhor modelo é o exponencial. Já para Amanda o melhor modelo é o Monomolecular. Quando se observa os dados linearizados os modelos que melhor se ajustaram aos dados foram o logístico e o gompertz. 
+Assim, os modelos que explicam melhor a epidemia são o Logístico e o gompertz pois com os dados linearizados obtem-se uma taxa de progresso padronizada ao longo da curva o que nos permite a comparação.  
+
+
+# Questão 4 
+
+Escolha dois modelos que parecem se ajustar visualmente aos dados de progresso e efetue uma regressão linear para verificar estatisticamente o melhor ajuste. Continue usando os valores médios dos tratamentos.
+
+```{r}
+# Regressão linear para Magaly
+rg1<-  select(curva1,t,y1,yexp,ymon,ylog,ygom)
+
+# Aplica a regressão linear para o logito
+lm1<-lm(ylog ~ t, data = rg1)
+lm1
+
+# Apresenta os dois coeficientes do modelo linear
+c_lm1<-coef(lm1)
+c_lm1
+
+# Intervalo de confiança dos parâmetros
+c_A <- confint(lm1)
+c_A
+
+# Aplica função inversa para o intercepto para obter o y0
+conf_A <- 1/(1+exp(-c_lm1[1])) # apenas para o intercepto
+conf_A #y0 destransformado
+```
+
+
+```{r}
+# Regressão linear para  Amanda, LOGITO
+rg2<-  select(curva2,t,y2,yexp,ymon,ylog,ygom)
+
+# Aplica a regressão linear
+lm2<-lm(ylog ~ t, data = rg2)
+lm2
+
+# Coeficientes do modelo linear
+c_lm2<-coef(lm2)
+c_lm2
+
+# Intervalo de confiança dos parâmetros
+c_B <- confint(lm2)
+c_B
+
+# y0 destransformado
+conf_B <- 1/(1+exp(-c_lm2[1])) 
+conf_B 
+```
+
+```{r}
+# Regressão linear para a Cultivar Margarita, LOGITO
+rg3<-  select(curva3,t,y3,yexp,ymon,ylog,ygom)
+
+# Aplica a regressão linear 
+lm3<-lm(ylog ~ t, data = rg3)
+lm3
+
+# Coeficientes do modelo linear
+c_lm3<-coef(lm3)
+c_lm3
+
+# Intervalo de confiança dos parâmetros
+c_C <- confint(lm3)
+c_C
+
+# y0 destransformado
+conf_C <- 1/(1+exp(-c_lm3[1])) 
+conf_C 
+```
+
+
+
+```{r}
+# Regressão linear para Magaly, GOMPITO
+rg4<-  select(curva1,t,y1,yexp,ymon,ylog,ygom)
+
+# Aplica a regressão linear
+lm4<-lm(ygom ~ t, data = rg4)
+lm4
+
+# Coeficientes do modelo linear
+c_lm4<-coef(lm4)
+c_lm4
+
+# Intervalo de confiança dos parâmetros
+c_D <- confint(lm4)
+c_D
+
+# y0 Destransformado
+conf_D <-exp(-exp(-c_lm4[1])) 
+conf_D 
+```
+
+```{r}
+# Regressão linear para Amanda, GOMPITO
+rg5<-  select(curva2,t,y2,yexp,ymon,ylog,ygom)
+
+# Aplica a regressão linear 
+lm5<-lm(ygom ~ t, data = rg5)
+lm5
+
+# Coeficientes do modelo linear
+c_lm5<-coef(lm5)
+c_lm5
+
+# Intervalo de confiança dos parâmetros
+c_E <- confint(lm5)
+c_E
+
+# y0 destransformado
+conf_E <-exp(-exp(-c_lm5[1])) 
+conf_E 
+```
+
+```{r}
+# Regressão linear para Margarita, GOMPITO
+rg6<-  select(curva3,t,y3,yexp,ymon,ylog,ygom)
+
+# Aplica a regressão linear 
+lm6<-lm(ygom ~ t, data = rg6)
+lm6
+
+# Coeficientes do modelo linear
+c_lm6<-coef(lm6)
+c_lm6
+
+# Intervalo de confiança dos parâmetros
+c_F <- confint(lm6)
+c_F
+
+#  y0 destransformado
+conf_F <-exp(-exp(-c_lm6[1])) 
+conf_F 
+```
+
+## Magaly
+```{r}
+# Gráficos da regresão linear para cada modelo
+par(mfrow=c(1,2))
+
+# Gráfico Logistico
+plot (ylog ~ t, data = rg1, main="Logístico", type = c("p"),
+      ylab = "Logito", xlab = "Tempo (dias)",col="blue")
+abline ((coef(lm1)),col="red")
+lm_coef_A <- round(coef(lm1), 3)
+mtext(bquote(y == .(lm_coef_A[1]) + .(lm_coef_A[2])*t), adj=0.5, padj=1.5)
+
+
+# Gráfico Gompertz
+plot ( ygom ~ t, data = rg4, main="Gompertz", type=c("p"),
+       ylab="Gompito", xlab="Tempo (dias)",col="red")
+abline ((coef(lm4)),col="blue")
+lm_coef_A <- round(coef(lm4), 3)
+mtext(bquote(y == .(lm_coef_A[1]) + .(lm_coef_A[2])*t), adj=0.5, padj=1.5)
+```
+
+
+
+##Amanda
+```{r}
+# Gráficos da regresão linear para cada modelo
+par(mfrow=c(1,2))
+
+# Grafico Logistico
+plot (ylog ~ t, data = rg2, main="Logistico", type = c("p"),
+      ylab = "Logito", xlab = "Tempo (dias)",col="blue")
+abline ((coef(lm2)),col="red")
+lm_coef_B <- round(coef(lm2), 3)
+mtext(bquote(y == .(lm_coef_B[1]) + .(lm_coef_B[2])*t), adj=0.4, padj=1.5)
+
+# Grafico Gompertz
+plot ( ygom ~ t, data = rg5, main="Gompertz", type=c("p"),
+       ylab="Gompito", xlab="Tempo (dias)",col="red")
+abline ((coef(lm5)),col="blue")
+lm_coef_B <- round(coef(lm5), 3)
+mtext(bquote(y == .(lm_coef_B[1]) + .(lm_coef_B[2])*t), adj=0.90, padj=1.5)
+```
+
+## Margarita
+```{r}
+# Gráficos da regresão linear para cada modelo
+par(mfrow=c(1,2))
+
+# Grafico Logistico
+plot (ylog ~ t, data = rg3, main="Logistico", type = c("p"),
+      ylab = "Logito", xlab = "Tempo (dias)",col="blue")
+abline ((coef(lm3)),col="red")
+lm_coef_C <- round(coef(lm3), 3)
+mtext(bquote(y == .(lm_coef_C[1]) + .(lm_coef_C[2])*t), adj=0.1, padj=1.5)
+
+# Grafico Gompertz
+plot ( ygom ~ t, data = rg6, main="Gompertz", type=c("p"),
+       ylab="Gompito", xlab="Tempo (dias)",col="red")
+abline ((coef(lm6)),col="blue")
+lm_coef_C <- round(coef(lm6), 3)
+mtext(bquote(y == .(lm_coef_A[1]) + .(lm_coef_A[2])*t), adj=0.1, padj=1.5)
+```
+
+
+# Questão 5
+
+Com base nos resultados da regressão linear, apresente os valores de y0*, r, R2 e QMR para cada combinação modelo x epidemia (2 x 3 = 6). Apresente também o erro dos parâmetros y0* e r* (entre parênteses ao lado do valor estimado do parâmetro).
+
+##Magaly
+```{r}
+## MODELO LOGÍSTICO
+# Valor de Yo
+lm_coef_log_A <- round(coef(lm1),3) 
+
+# Yo estimado
+y0_log_A <- 1/(1+exp(-lm_coef_log_A[1]))
+y0_log_A
+
+# Valor de r - Taxa
+r_log_A <- lm_coef_log_A[2]
+r_log_A
+
+# Valor predito pelo modelo Logístico
+rg1$pred_logito <- lm_coef_log_A[1] + (lm_coef_log_A[2]*rg1$t)
+rg1
+
+# Ajusta um modelo linear para predito versus y transformado para log
+aj_log_A <- lm(ylog ~ pred_logito, data = rg1)
+
+# Resíduo do ajuste (y* versus y^*) 
+res_aj_log_A <- resid(aj_log_A)
+res_aj_log_A
+
+# Coeficiente de determinação do modelo - R2
+R2_log_A <- summary(aj_log_A)$r.squared
+R2_log_A
+
+# coeficientes
+summary(aj_log_A)$coef
+
+# Quadrado médio dos resíduos - QMR
+qmr_log_A <- mean(aj_log_A$residuals^2) 
+
+# Raiz do quadrado médio dos resíduos (RMSE)
+sqrt(mean(aj_log_A$residuals^2)) 
+
+
+```
+
+
+```{r}
+## MODELO GOMPERTZ
+# Valor de Yo
+lm_coef_gom_A <- round(coef(lm4), 3) 
+
+# Yo estimado
+y0_gom_A <- exp(-exp(-c_lm4[1]))
+y0_gom_A
+
+# Valor de r - Taxa
+r_gom_A <- lm_coef_gom_A[2]
+r_gom_A
+
+# Valor predito pelo modelo Gompito
+rg4$pred_gompito <- lm_coef_gom_A[1] + (lm_coef_gom_A[2]*rg4$t)
+rg4
+
+# Ajusta um modelo linear para predito versus y transformado para log
+aj_gom_A <- lm(ygom ~ pred_gompito, data = rg4)
+
+# Resíduo do ajuste (y* versus y^*) 
+res_aj_gom_A <- resid(aj_gom_A)
+res_aj_gom_A
+
+# Coeficiente de determinação do modelo - R2
+R2_gom_A <- summary(aj_gom_A)$r.squared
+R2_gom_A
+
+# coeficientes
+summary(aj_gom_A)$coef
+
+# Quadrado médio dos resíduos - QMR
+qmr_gom_A <- mean(aj_gom_A$residuals^2) 
+
+# Raiz do quadrado médio dos resíduos (RMSE)
+sqrt(mean(aj_gom_A$residuals^2)) 
+
+
+
+```
+
+
+```{r,warning=FALSE}
+# Gráficos dos resíduos do modelo 
+par(mfrow=c(2,2))
+plot(aj_log_A, which=1:2, main="Log", adj=0, padj=0) 
+
+plot(aj_gom_A, which=1:2, main="Gomp", adj=0, padj=0) 
+```
+
+##Amanda
+```{r}
+## MODELO LOGISTICO
+# Valor de Yo
+lm_coef_log_B <- round(coef(lm2),3) 
+
+# Yo estimado
+y0_log_B <- 1/(1+exp(-lm_coef_log_B[1]))
+y0_log_B
+
+r_log_B <- lm_coef_log_B[2]
+r_log_B
+
+# Valor predito pelo modelo Logístico
+rg2$pred_logito <- lm_coef_log_B[1] + (lm_coef_log_B[2]*rg2$t)
+rg2
+
+# Ajusta um modelo linear para predito versus y transformado para log
+aj_log_B <- lm(ylog ~ pred_logito, data = rg2)
+
+# Resíduo do ajuste (y* versus y^*) 
+res_aj_log_B <- resid(aj_log_B)
+res_aj_log_B
+
+# Coeficiente de determinação do modelo - R2
+R2_log_B <- summary(aj_log_B)$r.squared
+R2_log_B
+
+# Coeficientes
+summary(aj_log_B)$coef
+
+# Quadrado médio dos resíduos - QMR
+qmr_log_B <- mean(aj_log_B$residuals^2) 
+
+# Raiz do quadrado médio dos resíduos (RMSE)
+sqrt(mean(aj_log_B$residuals^2)) 
+
+```
+
+```{r}
+## MODELO GOMPERTZ
+# Valor de Yo
+lm_coef_gom_B <- round(coef(lm5), 3) 
+
+# Yo estimado
+y0_gom_B <- exp(-exp(-c_lm5[1]))
+y0_gom_B
+
+# Valor de r - Taxa
+r_gom_B <- lm_coef_gom_B[2]
+r_gom_B
+
+# Valor predito pelo modelo Gompito
+rg5$pred_gompito <- lm_coef_gom_B[1] + (lm_coef_gom_B[2]*rg5$t)
+rg5
+
+# Ajusta um modelo linear para predito versus y transformado para log
+aj_gom_B <- lm(ygom ~ pred_gompito, data = rg5)
+
+# Resíduo do ajuste (y* versus y^*) 
+res_aj_gom_B <- resid(aj_gom_B)
+res_aj_gom_B
+
+# Coeficiente de determinação do modelo - R2
+R2_gom_B <- summary(aj_gom_B)$r.squared
+R2_gom_B
+
+# Mostra os coeficientes
+summary(aj_gom_B)$coef
+
+# Quadrado médio dos resíduos - QMR
+qmr_gom_B <- mean(aj_gom_B$residuals^2) 
+
+# Raiz do quadrado médio dos resíduos (RMSE)
+sqrt(mean(aj_gom_B$residuals^2)) 
+```
+
+```{r,warning=FALSE}
+#Gráficos dos Resíduos do Modelo
+par(mfrow=c(2,2))
+plot(aj_log_B, which=1:2, main="Log", adj=0, padj=0)
+
+plot(aj_gom_B, which=1:2, main="Gomp", adj=0, padj=0)
+```
+
+##Margarita
+```{r}
+## MODELO LOGÍSTICO
+# Valor de Yo
+lm_coef_log_C <- round(coef(lm3),3) 
+
+# Yo estimado
+y0_log_C <- 1/(1+exp(-lm_coef_log_C[1]))
+y0_log_C
+
+r_log_C <- lm_coef_log_C[2]
+r_log_C
+
+# Valor predito pelo modelo Logístico
+rg3$pred_logito <- lm_coef_log_C[1] + (lm_coef_log_C[2]*rg3$t)
+rg3
+
+# Ajusta um modelo linear para predito versus y transformado para log
+aj_log_C <- lm(ylog ~ pred_logito, data = rg3)
+
+# Resíduo do ajuste (y* versus y^*) 
+res_aj_log_C <- resid(aj_log_C)
+res_aj_log_C
+
+# Coeficiente de determinação do modelo - R2
+R2_log_C <- summary(aj_log_C)$r.squared
+R2_log_C
+
+# Coeficientes
+summary(aj_log_C)$coef
+
+# Quadrado médio dos resíduos - QMR
+qmr_log_C <- mean(aj_log_C$residuals^2) 
+
+# Raiz do quadrado médio dos resíduos (RMSE)
+sqrt(mean(aj_log_C$residuals^2)) 
+
+```
+
+```{r}
+## MODELO GOMPERTZ
+# Valor de Yo
+lm_coef_gom_C <- round(coef(lm6), 3) 
+
+# Yo estimado
+y0_gom_C <- exp(-exp(-c_lm6[1]))
+y0_gom_C
+
+# Valor de r - Taxa
+r_gom_C <- lm_coef_gom_C[2]
+r_gom_C
+
+# Valor predito pelo modelo Gompito
+rg6$pred_gompito <- lm_coef_gom_C[1] + (lm_coef_gom_C[2]*rg6$t)
+rg6
+
+# Ajusta um modelo linear para predito versus y transformado para log
+aj_gom_C <- lm(ygom ~ pred_gompito, data = rg6)
+
+# Resíduo do ajuste (y* versus y^*) 
+res_aj_gom_C <- resid(aj_gom_C)
+res_aj_gom_C
+
+# Coeficiente de determinação do modelo - R2
+R2_gom_C <- summary(aj_gom_C)$r.squared
+R2_gom_C
+
+# Coeficientes
+summary(aj_gom_C)$coef
+
+# Quadrado médio dos resíduos - QMR
+qmr_gom_C <- mean(aj_gom_C$residuals^2) 
+
+# Raiz do quadrado médio dos resíduos (RMSE)
+sqrt(mean(aj_gom_C$residuals^2)) 
+```
+
+
+```{r,warning=FALSE}
+par(mfrow=c(2,2))
+plot(aj_log_C, which=1:2, main="Log", adj=0, padj=0)
+
+plot(aj_gom_C, which=1:2, main="Gomp",adj=0, padj=0)
+```
+
+
+# Questão 6
+
+Monte tabelas (uma para cada uma das três epidemias) mostrando os valores de y, y*, y^ (y predito) e y^* (para cada modelo) e resíduos (y* versus y^*), para cada tempo t.
+
+##Magaly
+```{r}
+table_Magaly <- data.frame(rg1$t, rg1$y1, rg1$ylog, rg1$pred_logito, rg4$ygom, rg4$pred_gompito, res_aj_log_A, res_aj_gom_A) 
+
+names(table_Magaly)<-c("t", "y (severidade observada)", "y*(logito observado)", "y^*(logito predito)", "y*(gompito observado)", "y^*(gompito predito)", "Residual(baseado no logito)", "Residual(baseado em gompito)")
+
+kable(table_Magaly)
+```
+
+##Amanda
+```{r}
+table_Amanda <- data.frame(rg2$t, rg2$y2, rg1$ylog, rg2$pred_logito, rg5$ygom, rg5$pred_gompito, res_aj_log_B, res_aj_gom_B) 
+
+names(table_Amanda)<-c("t", "y (severidade observada)", "y*(logito observado)", "y^*(logito predito)", "y*(gompito observado)", "y^*(gompito predito)", "Residual(baseado no logito)", "Residual(baseado em gompito)")
+
+kable(table_Amanda)
+```
+
+##Margarita
+```{r}
+table_Margarita <- data.frame(rg3$t, rg3$y3, rg3$ylog, rg3$pred_logito, rg6$ygom, rg6$pred_gompito, res_aj_log_C, res_aj_gom_C) 
+
+names(table_Margarita)<-c("t", "y (severidade observada)", "y*(logito observado)", "y^*(logito predito)", "y*(gompito observado)", "y^*(gompito predito)", "Residual(baseado no logito)", "Residual(baseado em gompito)")
+
+kable(table_Margarita)
+```
+
+
+
+# Questão 7
+
+Monte os gráficos de dispersão e a linha da regressão de y* versus t, para cada combinação modelo x epidemia. Ainda, mostre os gráficos dos resíduos para cada combinação. Dica: Monte os gráficos em duas colunas (uma para cada modelo), de modo a permitir uma melhor comparação visual. As epidemias (por tratamento) devem ser apresentadas na sequência.
+
+###Magaly Logístico e Gompertz
+```{r}
+table_A <- data.frame(rg1$t, rg1$y1, rg1$ylog, rg1$pred_logito, rg1$ygom, rg4$pred_gompito, res_aj_log_A, res_aj_gom_A) 
+
+## Gráficos de dispersão e a linha de regressão para cada modelo
+
+## LOGÍSTICO
+# Gráfico dispersão
+par(mfrow=c(2,2))
+plot (rg1.ylog ~ rg1.t, data = table_A, main="Logistico ~ dispersão", type = c("p"), ylab = "Logito", xlab = "Tempo (dias)")
+abline ((coef(lm1)),col="RED")
+lm_coef_A <- round(coef(lm1), 3) 
+mtext(bquote(y == .(lm_coef_A[1]) + .(lm_coef_A[2])*t), adj=0.1, padj=1.5) 
+
+# Gráfico residuos
+plot(res_aj_log_A ~ rg1.t, data = table_A, ylab="Resíduos", xlab="Tempo (dias)",
+     main="Logístico ~ erro", pch = 16, ylim=c(-1,1),col="RED")
+abline (h=0)
+
+##GOMPERTZ 
+# Gráfico dispersão
+plot (rg1.ygom ~ rg1.t, data = table_A, main="Gompertz ~ dispersão", type = c("p"), ylab = "Gompito", xlab = "Tempo (dias)")
+abline ((coef(lm4)),col="BLUE")
+lm_coef_A <- round(coef(lm4), 3)
+mtext(bquote(y == .(lm_coef_A[1]) + .(lm_coef_A[2])*t), adj=0.1, padj=1.5) 
+# Gráfico residuo
+plot(res_aj_gom_A ~rg1.t, data = table_A, ylab="Resíduos", xlab="Tempo (dias)",
+     main="Gompertz ~ erro", pch=16, ylim=c(-1,1), col="BLUE")
+abline(h=0)
+```
+
+
+
+### Amanda
+```{r}
+
+table_B <- data.frame(rg2$t, rg2$y2, rg2$ylog, rg2$pred_logito, rg2$ygom, rg5$pred_gompito, res_aj_log_B, res_aj_gom_B) 
+
+## Gráficos de dispersão e a linha de regressão para cada modelo
+# LOGÍSTICO
+par(mfrow=c(2,2))
+
+# Gráfico de dispersão
+plot (rg2.ylog ~ rg2.t, data = table_B, main="Logistico ~ dispersão", type = c("p"), ylab = "Logito", xlab = "Tempo (dias)")
+abline ((coef(lm2)),col="RED")
+lm_coef_B <- round(coef(lm2), 3)
+mtext(bquote(y == .(lm_coef_B[1]) + .(lm_coef_B[2])*t), adj=0.1, padj=1.5) 
+
+# Gráfico residuos
+plot(res_aj_log_B ~ rg2.t, data = table_B, ylab="Resíduos", xlab="Tempo (dias)",
+     main="Logístico ~ erro", pch = 16, ylim=c(-1,1),col="RED")
+abline (h=0)
+
+# GOMPERTZ
+# Gráfico dispersão
+plot (rg2.ygom ~ rg2.t, data = table_B, main="Gompertz ~ dispersão", type = c("p"), ylab = "Gompito", xlab = "Tempo (dias)")
+abline ((coef(lm5)),col="BLUE")
+lm_coef_B <- round(coef(lm5), 3)
+mtext(bquote(y == .(lm_coef_B[1]) + .(lm_coef_B[2])*t), adj=0.1, padj=1.5) 
+
+# Gráfico residuo
+plot(res_aj_gom_B ~rg2.t, data = table_B, ylab="Resíduos", xlab="Tempo (dias)",
+     main="Gompertz ~ erro", pch=16, ylim=c(-1,1), col="BLUE")
+abline(h=0)
+```
+
+
+###Margarita
+```{r}
+table_C <- data.frame(rg3$t, rg3$y3, rg3$ylog, rg3$pred_logito, rg3$ygom, rg6$pred_gompito, res_aj_log_C, res_aj_gom_C) 
+
+## Gráficos de dispersão e a linha de regressão para cada modelo
+# LOGÍSTICO
+par(mfrow=c(2,2))
+
+# Gráfico de dispersão
+plot (rg3.ylog ~ rg3.t, data = table_C, main="Logistico ~ dispersão", type = c("p"), ylab = "Logito", xlab = "Tempo (dias)")
+abline ((coef(lm3)),col="RED")
+lm_coef_C <- round(coef(lm3), 3)
+mtext(bquote(y == .(lm_coef_C[1]) + .(lm_coef_C[2])*t), adj=0.1, padj=1.5) 
+
+# Gráfico residuos
+plot(res_aj_log_C ~ rg3.t, data = table_C, ylab="Resíduos", xlab="Tempo (dias)",
+     main="Logístico ~ erro", pch = 16, ylim=c(-1,1),col="RED")
+abline (h=0)
+
+# Gompertz 
+# Gráfico dispersão
+plot (rg3.ygom ~ rg3.t, data = table_C, main="Gompertz ~ dispersão", type = c("p"), ylab = "Gompito", xlab = "Tempo (dias)")
+abline ((coef(lm6)),col="BLUE")
+lm_coef_C <- round(coef(lm6), 3)
+mtext(bquote(y == .(lm_coef_C[1]) + .(lm_coef_C[2])*t), adj=0.1, padj=1.5) 
+
+# Gráfico residuo
+plot(res_aj_gom_C ~rg3.t, data = table_C, ylab="Resíduos", xlab="Tempo (dias)",
+     main="Gompertz ~ erro", pch=16, ylim=c(-1,1), col="BLUE")
+abline(h=0)
+
+```
+
+# Questão 8
+
+Com base nos parâmetros estimados pelos modelos (y0* e r*), calcule o valor de y^ (predito pelo modelo após a transformação reversa) para cada modelo. Faça o cálculo para cada data de avaliação (tempo t) e monte uma tabela mostrando o y observado e y predito pelo modelo. Por fim, calcule o coeficiente de determinação da relação desses dois valores (R*2) para escolher o melhor modelo.  Apresente um gráfico para cada modelo mostrando os dados observados e a linha dos dados preditos pelo modelo.
+
+###Magaly
+```{r}
+# Gráfico do progresso da doença
+#Curva do modelo Logístico
+par(mfrow=c(1,2))
+plot (y1 ~ t, data = rg1, main="Logistico",  type=c("p"),
+      ylab="Severidade (%)", xlab="Tempo (dias)", ylim=c(0,1),col="RED")
+
+lm_coefl_A <- round(coef(lm1), 3)
+lm_coefl_A
+
+y0 = 1/ (1+exp(-lm_coefl_A[1])) 
+y0
+
+max=120
+r = lm_coefl_A[2]
+
+# Taxa do modelo logístico
+curve( 1/(1+((1-y0)/y0)*exp(-r*x)), from=-5, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2,col="BLUE")
+
+# Curva do modelo de gompertz
+plot ( y1 ~ t, data = rg1, main="Gompertz", type=c("p"),
+       ylab="Severidade (%)", xlab="Tempo (dias)", ylim = c(0,1),col="BLUE")
+
+lm_coefg_A <- round(coef(lm4), 3)
+lm_coefg_A
+
+y0 = exp(-exp(-lm_coefg_A[1])) 
+y0
+
+max=120
+r = lm_coefg_A[2]
+
+# Taxa do modelo gompertz
+curve(exp(log(y0)*exp(-r*x)), from=-5, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2,col="RED")
+```
+
+
+###Amanda
+```{r}
+# Gráfico do progresso da doença
+# Curva do modelo Logistico
+par(mfrow=c(1,2))
+
+plot (y2 ~ t, data = rg2, main="Logistico",  type=c("p"),
+      ylab="Severidade (%)", xlab="Tempo (dias)", ylim=c(0,1),col="RED")
+
+lm_coefl_B <- round(coef(lm2), 3)
+lm_coefl_B
+
+y0 = 1/ (1+exp(-lm_coefl_B[1])) 
+y0
+
+max=120
+r = lm_coefl_B[2]
+
+# Estimado da taxa do logístico
+curve( 1/(1+((1-y0)/y0)*exp(-r*x)), from=-5, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2,col="BLUE")
+
+# curva do modelo de gompertz
+plot ( y2 ~ t, data = rg1, main="Gompertz", type=c("p"),
+       ylab="Severidade (%)", xlab="Tempo (dias)", ylim = c(0,1),col="BLUE")
+
+lm_coefg_B <- round(coef(lm5), 3)
+lm_coefg_B
+
+y0 = exp(-exp(-lm_coefg_B[1])) 
+y0
+
+max=120
+r = lm_coefg_B[2]
+
+# Estimado da taxa do modelo gompertz
+curve(exp(log(y0)*exp(-r*x)), from=-5, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2,col="RED")
+```
+
+##Margarita
+```{r}
+# Gráfico do progresso da doença
+#Curva de Modelo Logístico
+par(mfrow=c(1,2))
+
+plot (y3 ~ t, data = rg3, main="Logistico",  type=c("p"),
+      ylab="Severidade (%)", xlab="Tempo (dias)", ylim=c(0,1),col="RED")
+
+lm_coefl_C <- round(coef(lm3), 3)
+lm_coefl_C
+
+y0 = 1/ (1+exp(-lm_coefl_C[1])) 
+y0
+
+max=120
+r = lm_coefl_C[2]
+
+# Estimado da taxa  do logístico
+curve( 1/(1+((1-y0)/y0)*exp(-r*x)), from=-5, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2,col="BLUE")
+
+# curva do modelo de gompertz
+plot ( y3 ~ t, data = rg1, main="Gompertz", type=c("p"),
+       ylab="Severidade (%)", xlab="Tempo (dias)", ylim = c(0,1),col="BLUE")
+
+lm_coefg_C <- round(coef(lm6), 3)
+lm_coefg_C
+
+y0 = exp(-exp(-lm_coefg_A[1])) 
+y0
+
+max=120
+r = lm_coefg_C[2]
+
+# Estimado da taxa do modelo gompertz
+curve(exp(log(y0)*exp(-r*x)), from=-5, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2,col="RED")
+```
+
+##Cálculo do Coeficiente de determinação 
+```{r}
+#MAGALY
+## Logistico x Gompertz
+R2_l_A=summary(aj_log_A)$r.squared
+R2_l_A#Coeficiente de determinação Logistico
+R2_g_A=summary(aj_gom_A)$r.squared
+R2_g_A#Coeficiente de determinação Gompertz
+
+```
+
+```{r}
+#AMANDA
+## Logistico x Gompertz
+R2_l_B=summary(aj_log_B)$r.squared
+R2_l_B#Coeficiente de determinação Logistico
+R2_g_B=summary(aj_gom_B)$r.squared
+R2_g_B#Coeficiente de determinação Gompertz
+
+```
+
+```{r}
+# MARGARRITA
+## Logistico x Gompertz
+R2_l_C=summary(aj_log_C)$r.squared
+R2_l_C#Coeficiente de determinação Logistico
+R2_g_C=summary(aj_gom_C)$r.squared
+R2_g_C#Coeficiente de determinação Gompertz
+```
+
+
+# Questão 9
+
+Considere o modelo linear escolhido em 4d. Com base em seus parâmetros, calcule para cada uma das três epidemias o seguinte:
+
+-  incidência da doença no dia 19 e no dia 47 após o início da epidemia.
+
+```{r}
+# MAGALY 
+
+##Parâmetros
+lm_coefg_A
+y0_A <- exp(-exp(-lm_coefg_A[1]))
+y0_A## (Intercept)
+
+# Curva do modelo
+r_A <- lm_coefg_A[2]
+
+## Tempo 19 
+t1_19=19
+A_r_G=r_A
+A_y1_g=y0_A
+A_y2_g_19 = exp(log(A_y1_g))*exp(-A_r_G*t1_19)
+A_y2_g_19
+
+# Destransformação
+A_y2_g_d_19=exp(-exp(-A_y2_g_19))
+A_y2_g_d_19
+
+A_sev_19<-A_y2_g_d_19*100
+A_sev_19 
+
+# Tempo 47
+
+t1_47=47
+A_r_G<-r_A
+A_y1_g<-y0_A
+
+A_y2_g_47 = exp(log(A_y1_g))*exp(-A_r_G*t1_47)
+A_y2_g_47
+
+# Destransformação
+
+A_y2_g_d_47=exp(-exp(-A_y2_g_47))
+A_y2_g_d_47
+
+A_sev_47<-A_y2_g_d_47*100
+A_sev_47
+```
+
+```{r}
+#AMANDA 
+
+##Parâmetros
+lm_coefg_B
+y0_B <- exp(-exp(-lm_coefg_B[1]))
+y0_B## (Intercept)
+
+# Curva do modelo
+r_B <- lm_coefg_B[2]
+
+## Tempo 19 
+t1_19=19
+B_r_G=r_B
+B_y1_g=y0_B
+B_y2_g_19 = exp(log(B_y1_g))*exp(-B_r_G*t1_19)
+B_y2_g_19
+
+# Destransformação
+B_y2_g_d_19=exp(-exp(-B_y2_g_19))
+B_y2_g_d_19
+
+B_sev_19<-B_y2_g_d_19*100
+B_sev_19 
+
+# Tempo 47
+
+t1_47=47
+B_r_G<-r_B
+B_y1_g<-y0_B
+
+B_y2_g_47 = exp(log(B_y1_g))*exp(-B_r_G*t1_47)
+B_y2_g_47
+
+# Destransformação
+
+B_y2_g_d_47=exp(-exp(-B_y2_g_47))
+B_y2_g_d_47
+
+B_sev_47<-B_y2_g_d_47*100
+B_sev_47
+```
+
+```{r}
+#MARGARITA
+
+##Parâmetros
+lm_coefg_C
+y0_C <- exp(-exp(-lm_coefg_C[1]))
+y0_C## (Intercept)
+
+# Entra com os dados para gerar a curva do modelo
+r_C <- lm_coefg_C[2]
+
+## Tempo 19 
+t1_19=19
+C_r_G=r_C
+C_y1_g=y0_C
+C_y2_g_19 = exp(log(C_y1_g))*exp(-C_r_G*t1_19)
+C_y2_g_19
+
+# Destransformação
+C_y2_g_d_19=exp(-exp(-C_y2_g_19))
+C_y2_g_d_19
+
+C_sev_19<-C_y2_g_d_19*100
+C_sev_19 
+
+# Tempo 47
+
+t1_47=47
+C_r_G<-r_C
+C_y1_g<-y0_C
+
+C_y2_g_47 = exp(log(C_y1_g))*exp(-C_r_G*t1_47)
+C_y2_g_47
+
+# Destransformação
+
+C_y2_g_d_47=exp(-exp(-C_y2_g_47))
+C_y2_g_d_47
+
+C_sev_47<-C_y2_g_d_47*100
+C_sev_47
+```
+
+
+- o período de tempo que leva para y atingir o valor 0.5 (50% de incidência)
+
+
+```{r}
+#MAGALY
+##ParÂmetros
+y0_A_g<-y0_A
+
+r_A_g<-A_r_G
+
+yt1_g_tes=y0_A_g
+rG_tes=r_A_g
+yt2_g_tes=0.5
+t1_tes=7
+
+
+# Cálculo do número de dias após o tempo incial
+t_testMA<-log(yt2_g_tes/(1-yt2_g_tes))-log(yt1_g_tes/(1-yt1_g_tes))/rG_tes 
+t_testMA
+#tempo que leva para y atingir 50% de severidade
+t2_tesMA= t1_tes + t_testMA
+t2_tesMA
+
+```
+
+
+```{r}
+#AMANDA
+##Parâmetros
+y0_B_g2<-y0_B
+
+r_B_g2<-B_r_G
+
+yt1_g_tes2=y0_B_g2
+rG_tes2=r_B_g2
+yt2_g_tes2=0.5
+t1_tes2=7
+
+
+# Cálculo do número de dias após o tempo incial
+t_testAM<-log(yt2_g_tes2/(1-yt2_g_tes2))-log(yt1_g_tes2/(1-yt1_g_tes2))/rG_tes2 
+t_testAM
+#2tempo que leva para y atingir 50% de severidade
+t2_tesAM= t1_tes + t_testAM
+t2_tesAM
+```
+
+```{r}
+
+#Margarita 
+##Parâmetros
+y0_C_g2<-y0_C
+
+r_C_g2<-C_r_G
+
+yt1_g_tes3=y0_C_g2
+rG_tes3=r_C_g2
+yt2_g_tes3=0.5
+t1_tes3=7
+
+
+# Cálculo do número de dias após o tempo incial
+t_testMG<-log(yt2_g_tes3/(1-yt2_g_tes3))-log(yt1_g_tes3/(1-yt1_g_tes3))/rG_tes3 
+t_testMG
+#Tempo que leva para y atingir 50% de severidade
+t2_tesMG= t1_tes3 + t_testMG
+t2_tesMG
+```
+
+
+- O valor de r para o intervalo de tempo entre o dia 19 e o dia 47
+
+
+```{r}
+#Magaly
+##Parâmetros
+A_y2_g_d_19
+A_y2_g_d_47
+
+yt1_g_19A=A_y2_g_d_19
+yt2_g_47A=A_y2_g_d_47
+t1_testA=19
+t2_testA=47
+# Taxa Aparente da Infecção(r) para o intervalo de tempo entre o dia 19 e o dia 47
+rL_test_gA=(log(yt2_g_47A/(1-yt2_g_47A))-log(yt1_g_19A/(1-yt1_g_19A)))/(t2_testA-t1_testA)
+rL_test_gA
+```
+
+
+```{r}
+#Amanda
+##Parâmetros
+B_y2_g_d_19
+B_y2_g_d_47
+
+yt1_g_19B=B_y2_g_d_19
+yt2_g_47B=B_y2_g_d_47
+t1_testB=19
+t2_testB=47
+# Taxa aparente da infecção(r) para o intervalo de tempo entre o dia 19 e o dia 47
+rL_test_gB=(log(yt2_g_47B/(1-yt2_g_47B))-log(yt1_g_19B/(1-yt1_g_19B)))/(t2_testB-t1_testB)
+rL_test_gB
+```
+
+
+```{r}
+#MAGALY
+##Parâmetros
+C_y2_g_d_19
+C_y2_g_d_47
+
+yt1_g_19C=C_y2_g_d_19
+yt2_g_47C=C_y2_g_d_47
+t1_testC=19
+t2_testC=47
+# Taxa aparente da infecção(r) para o intervalo de tempo entre o dia 19 e o dia 47
+rL_test_gC=(log(yt2_g_47C/(1-yt2_g_47C))-log(yt1_g_19C/(1-yt1_g_19C)))/(t2_testC-t1_testC)
+rL_test_gC
+```
+
+
+# Parte 2 - Ajuste por regressão não linear
+
+# Questão 10
+Com base ainda no y médio para cada uma das três epidemias, aplique uma regressão não linear para avaliar o ajuste aos modelos monomolecular, logístico e Gompertz. Mostre os parâmetros estimados e o CCC de Lin (concordancia entre os preditos e os observados) como critério para escolher o melhor ajuste.
+
+##Magaly
+```{r}
+
+# Modelo logístico
+
+# Ajuste por regressão não linear
+nl_logistico_A = nlsLM(y1~k/(1+(k/y0-1)*exp(-r*t)),start=list(k=1.1,y0=0.001,r=0.27),data=curva1)
+
+# Parâmetros
+coef(nl_logistico_A)
+coef_nl_log_A = round(coef(nl_logistico_A),4)
+coef_nl_log_A
+
+# Erro padrão dos parâmetros e o R2
+summary(nl_logistico_A)
+
+# Gráfico com os dados originais e preditos pelo modelo
+par(mfrow=c(1,1))
+plot (y1 ~ t, data=curva1, main="Modelo logistico Magaly", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(coef_nl_log_A[1]/(1+exp(-log(coef_nl_log_A[2]/(1-coef_nl_log_A[2]))-coef_nl_log_A[3]*x)), add=TRUE)
+
+#Gráfico da relação entre o observado e o predito pelo modelo
+plot (y1 ~predict(nl_logistico_A), xlim=c(0,1), ylim=c(0,1),data=curva1)
+lm_predobs_A = lm(y1 ~ predict(nl_logistico_A),data=curva1)
+abline(lm_predobs_A)
+abline(0,1, lty=2)
+summary(lm_predobs_A)
+```
+
+
+```{r}
+# Modelo Gompertz
+
+# Ajuste por regressão não linear
+nl_gompertz_A = nlsLM(y1~k*exp(log(y0/k)*exp(-r*t)),start=list(k=0.5,y0=0,r=0.17),data=curva1)
+coef(nl_gompertz_A)
+
+# Gráfico com os dados originais e preditos pelo modelo
+par(mfrow=c(1,1))
+plot (y1 ~ t, data=curva1, main="Modelo Gompertz Magaly", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(coef(nl_gompertz_A)[1]*exp(log(coef(nl_gompertz_A)[2]/coef(nl_gompertz_A)[1])*exp(-coef(nl_gompertz_A)[3]*x)), from=0, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2)
+
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (predict(nl_gompertz_A)~y1, xlim=c(0,1), ylim=c(0,1),data=curva1)
+lm_predobs_g_A = lm(predict(nl_gompertz_A) ~ y1,data=curva1)
+abline(lm_predobs_g_A[1])
+abline(0,1, lty=2)
+summary(lm_predobs_g_A)
+```
+
+```{r}
+# Modelo Monomolecular
+
+# Ajuste o modelo de regressão não linear
+nl_mono_A= nlsLM(y1~1-(1-y0)*exp(-r*t), start=list(y0=0.001,r=0.1),data=curva1)
+#coeficientes
+coef(nl_mono_A)
+#sumÃ¡rio da regressÃ£o
+summary(nl_mono_A)
+
+# Gráfico dos dados observados
+par(mfrow=c(1,1))
+plot (y1 ~ t, data=curva1, main="Modelo monomolecular Magaly", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(1-((1-coef(nl_mono_A)[1])*exp(-coef(nl_mono_A)[2]*x)),from=0,to=170, lty=1, lwd=2, add=T) 
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (predict(nl_mono_A)~y1, xlim=c(0,1), ylim=c(0,1),data=curva1)
+  lm_predobs_m_A = lm(predict(nl_mono_A) ~ y1,data=curva1)
+abline(lm_predobs_m_A[1])
+abline(0,1, lty=2)
+summary(lm_predobs_m_A)
+```
+
+###Amanda
+```{r}
+
+# Modelo Logístico. 
+
+# Ajuste por regressão não linear
+
+nl_logistico_B = nlsLM(y2~k/(1+(k/y0-1)*exp(-r*t)),start=list(k=1.1,y0=0.001,r=0.10),data=curva2)
+
+# Parâmetros
+coef(nl_logistico_B)
+coef_nl_log_B = round(coef(nl_logistico_B),4)
+coef_nl_log_B
+
+# Erro padrão dos parâmetros e o R2
+summary(nl_logistico_B)
+
+# Gráfico com os dados originais e preditos pelo modelo
+par(mfrow=c(1,1))
+plot (y2 ~ t, data=curva2, main="Modelo logistico Amanda", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(coef_nl_log_B[1]/(1+exp(-log(coef_nl_log_B[2]/(1-coef_nl_log_B[2]))-coef_nl_log_B[3]*x)), add=TRUE)
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (y2 ~predict(nl_logistico_B), xlim=c(0,1), ylim=c(0,1),data=curva2)
+lm_predobs_B = lm(y2 ~ predict(nl_logistico_B),data=curva2)
+abline(lm_predobs_B)
+abline(0,1, lty=2)
+summary(lm_predobs_B)
+```
+
+```{r}
+#Modelo Gompertz
+
+# Ajuste pela regressão não linear
+nl_gompertz_B = nlsLM(y2~k*exp(log(y0/k)*exp(-r*t)),start=list(k=1.0,y0=0,r=0.1),data=curva2)
+coef(nl_gompertz_A)
+
+# Gráfico com os dados originais e preditos pelo modelo
+par(mfrow=c(1,1))
+plot (y2 ~ t, data=curva2, main="Modelo Gompertz Amanda", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(coef(nl_gompertz_B)[1]*exp(log(coef(nl_gompertz_B)[2]/coef(nl_gompertz_B)[1])*exp(-coef(nl_gompertz_B)[3]*x)), from=0, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2)
+
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (predict(nl_gompertz_B)~y2, xlim=c(0,1), ylim=c(0,1),data=curva2)
+lm_predobs_g_B = lm(predict(nl_gompertz_B) ~ y2,data=curva2)
+abline(lm_predobs_g_B[1])
+abline(0,1, lty=2)
+summary(lm_predobs_g_B)
+```
+
+```{r}
+# Modelo Monomolecular
+
+# Ajuste pela de regressão não linear
+nl_mono_B= nlsLM(y2~1-(1-y0)*exp(-r*t), start=list(y0=0.01,r=0.2),data=curva2)
+
+#coeficiente
+coef(nl_mono_B)
+summary(nl_mono_B)
+
+# Gráfico dos dados observados
+par(mfrow=c(1,1))
+plot (y2 ~ t, data=curva1, main="Modelo monomolecular Amanda", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(1-((1-coef(nl_mono_B)[1])*exp(-coef(nl_mono_B)[2]*x)),from=0,to=170, lty=1, lwd=2, add=T) 
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (predict(nl_mono_B)~y2, xlim=c(0,1), ylim=c(0,1),data=curva2)
+  lm_predobs_m_B = lm(predict(nl_mono_B) ~ y2,data=curva2)
+abline(lm_predobs_m_B[1])
+abline(0,1, lty=2)
+summary(lm_predobs_m_B)
+```
+
+###Margarita 
+```{r}
+
+# Modelo logístico.
+
+#ajuste por regressão não linear
+
+nl_logistico_C = nlsLM(y3~k/(1+(k/y0-1)*exp(-r*t)),start=list(k=0.9,y0=0.000,r=0.19),data=curva3)
+
+#Parâmetros
+coef(nl_logistico_C)
+coef_nl_log_C = round(coef(nl_logistico_C),4)
+coef_nl_log_C
+
+# Erro padrÃ£o dos parâmetros e o R2
+summary(nl_logistico_C)
+
+# Gráfico com os dados originais e preditos pelo modelo
+par(mfrow=c(1,1))
+plot (y3 ~ t, data=curva3, main="Modelo logistico Margarita", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(coef_nl_log_C[1]/(1+exp(-log(coef_nl_log_C[2]/(1-coef_nl_log_C[2]))-coef_nl_log_C[3]*x)), add=TRUE)
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (y3 ~predict(nl_logistico_C), xlim=c(0,1), ylim=c(0,1),data=curva3)
+lm_predobs_C = lm(y3 ~ predict(nl_logistico_C),data=curva3)
+abline(lm_predobs_C)
+abline(0,1, lty=2)
+summary(lm_predobs_C)
+```
+
+
+```{r}
+#Modelo Gompertz
+
+# Ajuste pela regressão não linear
+nl_gompertz_C = nlsLM(y3~k*exp(log(y0/k)*exp(-r*t)),start=list(k=0.5,y0=0,r=0.17),data=curva3)
+coef(nl_gompertz_C)
+
+# Gráfico com os dados originais e preditos pelo modelo
+par(mfrow=c(1,1))
+plot (y3 ~ t, data=curva3, main="Modelo Gompertz Margarita", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(coef(nl_gompertz_C)[1]*exp(log(coef(nl_gompertz_C)[2]/coef(nl_gompertz_C)[1])*exp(-coef(nl_gompertz_C)[3]*x)), from=0, to=max, add=T, ylab="y", xlab="t", ylim=c(0,1), lty=1, lwd=2)
+
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (predict(nl_gompertz_C)~y2, xlim=c(0,1), ylim=c(0,1),data=curva3)
+lm_predobs_g_C = lm(predict(nl_gompertz_C) ~ y3,data=curva3)
+abline(lm_predobs_g_C[1])
+abline(0,1, lty=2)
+summary(lm_predobs_g_C)
+```
+
+
+
+```{r}
+# Modelo Monomolecular
+
+# Ajuste o modelo de regressãoo não linear
+nl_mono_C= nlsLM(y3~1-(1-y0)*exp(-r*t), start=list(y0=0.01,r=0.2),data=curva3)
+#coeficientes
+coef(nl_mono_C)
+summary(nl_mono_C)
+
+# Gráfico dos dados observados
+par(mfrow=c(1,1))
+plot (y3 ~ t, data=curva3, main="Modelo monomolecular Margarita", type="p", 
+      ylab="Severidade (%)", xlab="Tempo (dias)")
+curve(1-((1-coef(nl_mono_C)[1])*exp(-coef(nl_mono_C)[2]*x)),from=0,to=170, lty=1, lwd=2, add=T) 
+
+# Gráfico da relação entre o observado e o predito pelo modelo
+plot (predict(nl_mono_C)~y3, xlim=c(0,1), ylim=c(0,1),data=curva3)
+  lm_predobs_m_C = lm(predict(nl_mono_C) ~ y3,data=curva3)
+abline(lm_predobs_m_C[1])
+abline(0,1, lty=2)
+summary(lm_predobs_m_C)
+```
+
+
+```{r}
+
+#CCC-Lins: Coeficienciente de Concordancia de Lins
+
+
+#Preditos Magaly
+a_nl_l<-predict(nl_logistico_A)
+a_nl_g<-predict(nl_gompertz_A)
+a_nl_m<-predict(nl_mono_A)
+
+#Preditos Amanda
+c_nl_l<-predict(nl_logistico_B)
+c_nl_g<-predict(nl_gompertz_B)
+c_nl_m<-predict(nl_mono_B)
+
+#Preditos Margarita
+e_nl_l<-predict(nl_logistico_C)
+e_nl_g<-predict(nl_gompertz_C)
+e_nl_m<-predict(nl_mono_C)
+
+#Observado Magaly
+a_o<-curva1$y1
+#Observado Amanda
+c_o<-curva2$y2
+#Observado Margarita
+e_o<-curva3$y3
+
+#CCC-MAGALY
+magaly_nl_l_1<-as.data.frame(cbind(a_nl_l,a_o))
+ccc_magaly_l<- epi.ccc(magaly_nl_l_1$a_nl_l, magaly_nl_l_1$a_o, ci =
+"z-transform", conf.level = 0.95)
+ccc_magaly_l$rho.c # Rho nl logistico para "MAGALY"
+
+magaly_nl_g_1<-as.data.frame(cbind(a_nl_g,a_o))
+ccc_magaly_g<- epi.ccc(magaly_nl_g_1$a_nl_g, magaly_nl_g_1$a_o, ci =
+"z-transform", conf.level = 0.95)
+ccc_magaly_g$rho.c # Rho nl gompertz para "MAGALY"
+
+magaly_nl_m_1<-as.data.frame(cbind(a_nl_m,a_o))
+ccc_magaly_m<- epi.ccc(magaly_nl_m_1$a_nl_m, magaly_nl_m_1$a_o, ci =
+"z-transform", conf.level = 0.95)
+ccc_magaly_m$rho.c # Rho nl monomolecular para "MAGALY"
+
+#CCC-AMANDA
+
+amanda_nl_l_1<-as.data.frame(cbind(c_nl_l,c_o))
+ccc_amanda_l<- epi.ccc(amanda_nl_l_1$c_nl_l, amanda_nl_l_1$c_o, ci
+= "z-transform", conf.level = 0.95)
+ccc_amanda_l$rho.c # Rho nl logistico para "AMANDA"
+
+amanda_nl_g_1<-as.data.frame(cbind(c_nl_g,c_o))
+ccc_amanda_g<- epi.ccc(amanda_nl_g_1$c_nl_g, amanda_nl_g_1$c_o, ci
+= "z-transform", conf.level = 0.95)
+ccc_amanda_g$rho.c # Rho nl gompertz para "AMANDA"
+
+amanda_nl_m_1<-as.data.frame(cbind(c_nl_m,c_o))
+ccc_amanda_m<- epi.ccc(amanda_nl_m_1$c_nl_m, amanda_nl_m_1$c_o, ci
+= "z-transform", conf.level = 0.95)
+ccc_amanda_m$rho.c # Rho nl monomolecular para "AMANDA"
+
+#CCC-MARGARITA
+
+margarita_nl_l_1<-as.data.frame(cbind(e_nl_l,e_o))
+ccc_margarita_l<- epi.ccc(margarita_nl_l_1$e_nl_l, margarita_nl_l_1$e_o, ci =
+"z-transform", conf.level = 0.95)
+ccc_margarita_l$rho.c # Rho nl logistico para "MARGARITA"
+
+margarita_nl_g_1<-as.data.frame(cbind(e_nl_g,e_o))
+ccc_margarita_g<- epi.ccc(margarita_nl_g_1$e_nl_g, margarita_nl_g_1$e_o, ci =
+"z-transform", conf.level = 0.95)
+ccc_margarita_g$rho.c # Rho nl gompertz para "MARGARITA"
+
+margarita_nl_m_1<-as.data.frame(cbind(e_nl_m,e_o))
+ccc_margarita_m<- epi.ccc(margarita_nl_m_1$e_nl_m, margarita_nl_m_1$e_o, ci =
+"z-transform", conf.level = 0.95)
+ccc_margarita_m$rho.c # Rho nl monomolecular para "MARGARITA"
+```
+
+
+
+## Parte 3 - Análise comparativa
+
+# Questão 11 
+Após escolher o modelo que melhor se ajusta às três epidemias  e efetuar alguns cálculos simples, é hora de fazer a comparação entre as três epidemias para verificar o efeito dos tratamentos em alguns parâmetros da epidemia.
+
+```{r}
+#Ajuste por regressão linear
+
+# Criação do data.frame 
+ep1<-dat2
+ep1=data.frame(ep1$cultivar, ep1$t, ep1$s)
+head(ep1)
+
+names(ep1)<-c("TRAT", "Tempo", "y")
+ep1
+
+ep1$y_u=ep1$y/100
+head(ep1)
+attach(ep1)
+
+#Gompertz
+ep1<-mutate(ep1,gompito_u=-log(-log(y_u)))
+head(ep1)
+
+# Ajuste do modelo
+models<-dlply(ep1, "TRAT", function(ep1)
+lm(gompito_u ~ Tempo, data = ep1))
+
+# Estimativa e erro padrão do parâmetro
+coefs_u<-ldply(models, function(x) summary(x)$coefficients[ ,1:2])
+coefs_u
+
+# Sumário completo dos modelos
+l_ply(models, summary, .print = TRUE)
+```
+
+
+# Questão 12
+Considerando apenas os valores médios de y em cada avaliação, apresente um gráfico de dispersão de pontos conectado por linhas de progresso das três epidemias no mesmo gráfico (y versus t) para permitir uma comparação visual das três epidemias em um mesmo gráfico. Logo abaixo, apresente um segundo gráfico com a dispersão dos valores de y* (pelo modelo escolhido anteriormente) das três epidemias no tempo, juntamente com as três linhas da regressão linear. 
+
+```{r}
+
+# Curva de progresso das epidemias (Severidade x Tempo)
+
+plot(rg1$t, rg1$y1, ylim=c(0,2), xlim=c(0,120), pch=16, col="blue", type='o', ylab="y ", xlab="Tempo (dias)", main = "Curva de progresso das epidemias")
+points(rg2$t, rg2$y2, pch=16, col="black", type='o')
+points(rg3$t, rg3$y3, pch=16, col="red", type='o')
+legend(-0.2, 2, box.lty=0, bg="transparent", pch=16, lty=1, 
+       c("MAGALY", "AMANDA", "MARGARITA"), col=c("blue", "black", "red"))
+
+
+## Gráfico de y* no tempo   
+
+nov_1_g<-data.frame(rg4$t, rg4$y1, rg5$y2, rg6$y3)
+nov_1_g
+
+nu_1_g<-data.frame(rg1$t,rg4$ygom, rg5$ygom, rg6$ygom )
+nu_1_g
+
+lm_coef_1_g=coef(lm4)
+lm_coef_2_g=coef(lm5)
+lm_coef_3_g=coef(lm6)
+
+Tempo_1<-rg1$t
+
+m1=nov_1_g[1,2]; m2=nov_1_g[1,3]; m3=nov_1_g[1,4]
+b1=lm_coef_1_g[2]; b2=lm_coef_2_g[2]; b3=lm_coef_3_g[2]
+max=120;
+
+# Gráfico de dispersão dos valores de y* no tempo
+curve(-log(-log(m1))+b1*x, from=0, to=max, ylim=c(-10,10), ylab="(-log(-log(y))", xlab="t", lty=1, lwd=2, bg="grey", main="Gompertz", col="blue")
+text (10, 1.8, "rG=0.038",col="BLUE") # inclui um texto identificando a curva
+points(nu_1_g$rg4.ygom ~Tempo_1, pch=16, col="blue")
+curve(-log(-log(m2))+b2*x,from=0,to=max, lty=2, lwd=2, col="black", add=T)
+text (43, -2, "rG=0.021",col = "BLACK")
+points(nu_1_g$rg5.ygom~Tempo_1, pch=16, col="black")
+curve(-log(-log(m3))+b3*x,from=0,to=max, lty=3, lwd=2, col="red", add=T)
+text (53, 3, "rG=0.031",col="RED")
+points(nu_1_g$rg6.ygom~Tempo_1, pch=16, col="red")
+legend(-1, 11, box.lty=0, bg="transparent", lwd=2, lty=c(1, 2, 3), 
+       c("MAGALY", "AMANDA", "MARGARITA"), col=c("blue", "black", "red"))
+```
+
+
+
+# Questão 13
+
+Com base nos valores de r e y0* estimados pelo modelo que você escolheu e o respectivo erro padrão, calcule se há diferença significativa desses valores nas três epidemias. Para tal, avalie essa diferença através de um teste-t. Faça 3 comparações para cada parâmetro (r e y*0). Lembre de calcular os graus de liberdade para o teste-t com base no número de observações (8) e no número de parâmetros (2).
+
+```{r}
+# Teste-t da Taxa Aparente da Infecção (r)
+coefs_u
+
+# Vetores com os valores do estimado e do erro padrão para cada curva
+r1 = coefs_u[2,2] #AMANDA
+r2 = coefs_u[4,2] #MAGALY
+r3 = coefs_u[6,2] #MARGARITA
+
+# Erro padrão da taxa da curva1
+se_r1 = coefs_u[2,3] #AMANDA
+se_r2 = coefs_u[4,3] #MAGALY
+se_r3 = coefs_u[6,3] #MARGARITA
+
+# Teste T: taxas das curvas
+
+# AMANDA x MAGALY
+test_t_1 = (r1-r2)/(se_r1^2 + se_r2^2)^0.5
+test_t_1
+
+## AMANDA x MARGARITA
+test_t_2 = (r1-r3)/(se_r1^2 + se_r3^2)^0.5
+test_t_2
+
+## MAGALY X MARGARITA
+test_t_3 = (r3-r2)/(se_r2^2 + se_r3^2)^0.5
+test_t_3 
+
+#Teste-t para y0
+coefs_u
+
+# Valores do estimado e do erro padrão para cada curva
+y0AMANDA= coefs_u[1,2] 
+y0MAGALY= coefs_u[3,2]
+y0MARGARITA= coefs_u[5,2]
+
+# se_r1 é o erro padrão da taxa da curva1
+se_yo_A= coefs_u[1,3] 
+se_yo_E= coefs_u[3,3]
+se_yo_C= coefs_u[5,3]
+
+# TESTE T: a estatística t para o y0
+## AMANDA x MAGALY
+test_t_yo_1=(y0AMANDA-y0MAGALY)/(se_yo_A^2 + se_yo_C^2)^0.5
+test_t_yo_1
+
+## AMANDA x MARGARITA
+test_t_yo_2=(y0AMANDA-y0MARGARITA)/(se_yo_A^2 + se_yo_E^2)^0.5
+test_t_yo_2
+
+##  MARGARITA+ MAGALY
+test_t_yo_3 = (y0MARGARITA-y0MAGALY)/(se_yo_E^2 + se_yo_C^2)^0.5
+test_t_yo_3
+
+# Valor crítico da tabela t. 
+tgl=qt(c(.025, .975), df=12)
+tgl
+
+```
+
+
+
+# Questão 14
+
+Ainda usando os dados médios, estima os parâmetros utilizando modelos mistos no R (ver exemplo da aula) ao invés de fazer uma regressão para cada epidemia. Entre com os dados de y para cada uma das três epidemias. Lembre de usar a transformação conforme o modelo que você escolheu. Verifica se os parâmetros são os mesmos estimados 
+```{r}
+#Ajuste e comparação parâmetros por modelo de covariância
+
+#Ytranformado = CONSTANTE + Cultivar + Tempo + (Cultivar X Tempo) + Erro
+
+
+model = lme(gompito_u ~ factor(TRAT)*Tempo-1, random = ~ 1 | Tempo, method="REML", data=ep1) 
+anova(model) #lme ajusta modelos mistos
+
+summary(model)
+```
+
+
+# Questão 15
+Para cada epidemia, calcule o valor médio de ymax e da área abaixo da curva de progresso da doença (AUDPC média). Mostre se há diferença estatística entre as médias de ymax e AUDPC nas três epidemias. Use um modelo de Anova para verificar se há diferença entre qualquer uma das epidemias. Se houver diferença, compare as epidemias usando um teste de comparação de médias.
+
+```{r}
+
+# Média das repetições nas 3 epidemias
+dat1$r<-as.factor(dat1$r)
+dat1$cultivar<-as.factor(dat1$cultivar)
+attach(dat1)
+
+amanda_r1<-filter(dat1,r=="1", cultivar=="Amanda")
+amanda_r1<-mutate(amanda_r1, amanda_r1=y/100)
+amanda_r1<-data.frame(subset(amanda_r1, select = c(amanda_r1)))
+
+
+
+amanda_r2<-filter(dat1,r=="2",cultivar=="Amanda")
+amanda_r2<-mutate(amanda_r2, amanda_r2=y/100)
+amanda_r2<-data.frame(subset(amanda_r2, select = c(amanda_r2)))
+
+
+
+amanda_r3<-filter(dat1,r=="3",cultivar=="Amanda")
+amanda_r3<-mutate(amanda_r3, amanda_r3=y/100)
+amanda_r3<-data.frame(subset(amanda_r3, select = c(amanda_r3)))
+
+
+
+magaly_r1<-filter(dat1,r=="1",cultivar=="Magaly")
+magaly_r1<-mutate (magaly_r1, magaly_r1=y/100)
+magaly_r1<-data.frame(subset(magaly_r1, select = c(magaly_r1)))
+
+
+
+magaly_r2<-filter(dat1,r=="2",cultivar=="Magaly")
+magaly_r2<-mutate(magaly_r2, magaly_r2=y/100)
+magaly_r2<-data.frame(subset(magaly_r2, select = c(magaly_r2)))
+
+
+
+magaly_r3<-filter(dat1,r=="3", cultivar=="Magaly")
+magaly_r3<-mutate(magaly_r3, magaly_r3=y/100)
+magaly_r3<-data.frame(subset(magaly_r3, select = c(magaly_r3)))
+
+
+
+margarita_r1<-filter(dat1,r=="1", cultivar=="Margarita")
+margarita_r1<-mutate(margarita_r1, margarita_r1=y/100)
+margarita_r1<-data.frame(subset(margarita_r1, select = c(margarita_r1)))
+
+margarita_r2<-filter(dat1,r=="2", cultivar=="Margarita")
+margarita_r2<-mutate(margarita_r2, margarita_r2=y/100)
+margarita_r2<-data.frame(subset(margarita_r2, select = c(margarita_r2)))
+
+margarita_r3<-filter(dat1,r=="3", cultivar=="Margarita")
+margarita_r3<-mutate(margarita_r3, margarita_r3=y/100)
+margarita_r3<-data.frame(subset(margarita_r3, select = c(margarita_r3)))
+
+curva1<-mutate(curva1,tmp=t)
+tmp<-data.frame (subset (curva1, select= c(tmp)))
+
+#  Área abaixo da curva de progresso da doençaa (AUDPC)
+audpc_tes=data.frame(tmp, amanda_r1, amanda_r2, amanda_r3, magaly_r1, magaly_r2, magaly_r3, margarita_r1, margarita_r2, margarita_r3)
+
+
+# AUDPC-"AMANDA"
+
+audpc1_c1<-audpc(audpc_tes$amanda_r1, audpc_tes$tmp, type="absolute")
+audpc1_c1
+
+audpc1_c2<-audpc(audpc_tes$amanda_r2, audpc_tes$tmp, type="absolute")
+audpc1_c2
+
+audpc1_c3<-audpc(audpc_tes$amanda_r3, audpc_tes$tmp, type="absolute")
+audpc1_c3
+
+
+# AUDPC-"MAGALY"
+
+audpc1_d1<-audpc(audpc_tes$magaly_r1, audpc_tes$tmp, type="absolute")
+audpc1_d1
+
+audpc1_d2<-audpc(audpc_tes$magaly_r2, audpc_tes$tmp, type="absolute")
+audpc1_d2
+
+audpc1_d3<-audpc(audpc_tes$magaly_r3, audpc_tes$tmp, type="absolute")
+audpc1_d3
+
+
+# AUDPC- "MARGARITA"
+
+audpc1_e1<-audpc(audpc_tes$margarita_r1, audpc_tes$tmp, type="absolute")
+audpc1_e1
+
+audpc1_e2<-audpc(audpc_tes$margarita_r2, audpc_tes$tmp, type="absolute")
+audpc1_e2
+
+audpc1_e3<-audpc(audpc_tes$margarita_r3, audpc_tes$tmp, type="absolute")
+audpc1_e3
+
+
+# Data.frame dos tratamentos
+
+tratamentos=c("AMANDA", "AMANDA", "AMANDA", "MAGALY", "MAGALY", "MAGALY", "MARGARITA", "MARGARITA", "MARGARITA")
+
+aacpdc1_1=c(audpc1_c1, audpc1_c2, audpc1_c3, audpc1_d1, audpc1_d2, audpc1_d3, audpc1_e1, audpc1_e2, audpc1_e3)
+aacpdc1_1
+
+tabela_aacpd= data.frame(tratamentos, aacpdc1_1)
+tabela_aacpd
+
+anova_1_fer<-aov(aacpdc1_1 ~ tratamentos, data=tabela_aacpd)
+summary(anova_1_fer)
+
+
+comp_1<- LSD.test(anova_1_fer, "tratamentos", console=TRUE)
+
+comp_1
+
+#ymax
+
+#AMANDA
+amanda_max_1= 98.00
+amanda_max_2= 95.00
+amanda_max_3= 91.00
+
+#MAGALY
+magaly_max_1= 70.59
+magaly_max_2= 69.69
+magaly_max_3= 71.42
+
+#MARGARITA
+margarita_max_1= 94.31
+margarita_max_2= 93.61
+margarita_max_3= 95.00
+
+ymax=c(amanda_max_1, amanda_max_2, amanda_max_3, magaly_max_1, magaly_max_2, magaly_max_3, margarita_max_1, margarita_max_2, margarita_max_3)
+
+tab_ymax= data.frame(tratamentos, ymax)
+tab_ymax
+
+anova_2_fer<-aov(ymax ~ tratamentos, data=tab_ymax)
+summary(anova_2_fer)
+
+#Teste Fisher's Least Significant Difference
+comp_2<- LSD.test(anova_2_fer, "tratamentos", console=TRUE)
+comp_2
+```
+
+
+
+# Questão 16
+Faça uma discussão  sobre o resultado de todas as análises epidemiológicas por você conduzida destacando o modelo melhor ajustado, diferenças entre os parâmetros, efeito dos tratamentos , etc.
+
+  A Curva de Progresso da Doença (y x t) é a primeira etapa para interpretações das epidemias. Nela observou-se que a cultivar Amanda, em um primeiro momento, atingiu um maior valor médio de severidade sendo posteriormente alcançada por Margarita.Já Magaly atingiu um menor valor de sevridade. Quando se interpreta o gráfico da taxa absoluta da doença, precebe-se que a cultivar Margarita apresentou valores maiores na taxa, seguidos por Magaly e depois por Amanda.
+  
+  Modelos matemáticos são aplicados para aumentar o entendimento das epidemias, por isso o próximo passo dessa análise foi submeteros dados aos modelos logístico, exponencial, monomolecular e gompertz. A intensidade da doença foi linearizada para se obter uma taxa de progresso da epidemia padronizada ao longo da curva e a escolha é o modelo que apresentar a “curva mais reta”. Neste exercício os modelos que melhor explicaram a epidemia nas três cultivares foram o Logístico e o Gompertz.
+  
+  Posteriomente, os valores de y linearizados para cada modelo escolhido foram submetidos à análise de regressão. Os parâmetros obtidos foram o intercept (y0) que corresponde a severidade da doença no tempo zero e o slope (r) que corresponde a taxa de progresso da doença no tempo. A cultivar Magaly alcançou menores valores de y0 e da taxa de progresso da doença nos dois modelos testados. Enquanto que a cultivar Amanda apresentou maiores valores para esses dois parâmetros e isto explica porque esta epidemia foi a que mais progrediu no decorrer do tempo devido à uma maior fonte de inóculo inicial.
+  
+  Com base nos resultados da regressão linear, os valores do y0, r (taxa aparente da infecção), R2 (y predito) e QMR foram calculados. Para o parâmetro y0, percebe-se que o modelo Logístico apresentou os maiores valores para as cultivares Magaly e Margarita, quando comparado com o de Gompertz. Porém para a cultivar Amanda, o valor de y0 nos modelos Logístico e Gompertz não tiveram grandes diferenças (y0L=0.14 e y0G=0.15). Já os valores da taxa aparente da infecção (r) o modelo logístico obteve os maiores valores. Em relaçao ao coeficiente de determinação do modelo (R2) das cultivares  Amanda  e Magaly obtido pelo modelo Gompertz  foi de 0.85 e 0.97 que se ajustou-se melhor em comparação com o modelo Logístico (0.77 e 0.93). Já para a cultivar Margarita o melhor valor de R2 foi obtido pelo modelo Logístico 0.92, mas quando se olha o gráfico de dispersão e a linha de regressão y* versus t (que combina o modelo por epidemia) houve um melhor ajuste nos dois modelos. A análise de regressão não linear e o CCCLins foram calculados para comparar os modelos. Assim,de acordo com os resultados apresentados acima, o modelo escolhido foi Gompertz. 
+  
+  Com a escolha do modelo é possível realizar uma série de cálculos que suportam o entendimento da epidemia, como por exemplo, a incidência da doença em determinado tempo, qual o período de duração da epidemia, ou o período de tempo que a epidemia demora para alcançar determinada porcentagem de severidade. As epidemias foram comparadas com base na análise de variância (ANOVA) e pelo teste LSD, também através da área abaixo da curva de progresso da doença (AUDPC) e pelo ymáx. O teste LSD mostrou que para a AUDPC as três cultivares se diferiram entre elas significamente enquanto para o ymáx Amanda e Margarita não se difereriram significamente entre si, mas se diferiram de Magaly.
+  
+  Assim, com o decorrer desse estudo epidemiológico pode-se perceber que as cultivares Amanda e Margarita atigiram severidade mais elevadas (94%), o que para o produtor rural ocasionará perdas mais elevadas. Desta maneira a cultivar Magaly se torna mais propícia em áreas com relato da doença em estudo. 
+  
+  
